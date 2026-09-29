@@ -1,11 +1,17 @@
-using Gestion_Financiera.Data;
 using Gestion_Financiera.Components;
+using Gestion_Financiera.Data;
+using Gestion_Financiera.Repositories.Implementations;
+using Gestion_Financiera.Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Añadir servicios al contenedor.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Registrar los repositorios en el contenedor de dependencias
+builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 // ---------------------------------------------------------------------------
 // CONFIGURACIÓN DE DAPPER Y SQL SERVER

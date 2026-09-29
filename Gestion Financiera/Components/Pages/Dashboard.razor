@@ -1,0 +1,154 @@
+﻿@page "/"
+@using Gestion_Financiera.Models
+@using Gestion_Financiera.Repositories.Interfaces
+@inject IAccountRepository AccountRepository
+@inject ITransactionRepository TransactionRepository
+
+<PageTitle>Dashboard Financiero</PageTitle>
+
+<div class="container-fluid mt-4">
+    <h2 class="mb-4">Resumen Financiero</h2>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Métrica Global: Saldo Total -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card bg-primary text-white shadow-sm">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 opacity-75">Saldo Total Patrimonio</h6>
+                        <h3 class="card-title mb-0">@totalBalance.ToString("C")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Sección: Cuentas Bancarias -->
+            <div class="col-lg-5 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">Tus Cuentas</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        @if (!accounts.Any())
+                        {
+                            <p class="p-3 text-muted mb-0">No tienes cuentas registradas.</p>
+                        }
+                        else
+                        {
+                            <div class="list-group list-group-flush">
+                                @foreach (var account in accounts)
+                                {
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">@account.AccountName</h6>
+                                            <small class="text-muted">
+                                                @(account.BankInfo?.BankName ?? "Banco Desconocido") • @account.AccountType
+                                            </small>
+                                        </div>
+                                        <span class="fw-bold @(account.Balance >= 0 ? "text-success" : "text-danger")">
+                                            @account.Balance.ToString("C")
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección: Últimas Transacciones -->
+            <div class="col-lg-7 mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">Últimos Movimientos</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Concepto</th>
+                                    <th>Cuenta</th>
+                                    <th class="text-end">Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!transactions.Any())
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center text-muted py-3">
+                                            No hay transacciones recientes.
+                                        </td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var tx in transactions)
+                                    {
+                                        <tr>
+                                            <td>@tx.TransactionDate.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                <div>@tx.TransactionDescription</div>
+                                                @if (tx.Category != null)
+                                                {
+                                                    <span class="badge bg-secondary opacity-75">@tx.Category.CategoryName</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@(tx.Account?.AccountName ?? "N/A")</small>
+                                            </td>
+                                            <td class="text-end fw-bold @(tx.Amount >= 0 ? "text-success" : "text-danger")">
+                                                @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("C")
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private IEnumerable<Account> accounts = new List<Account>();
+    private IEnumerable<Transaction> transactions = new List<Transaction>();
+    private decimal totalBalance = 0;
+
+    // ID de usuario de prueba (Sustituir por la sesión del usuario autenticado)
+    private const int CurrentUserId = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Carga en paralelo de cuentas y transacciones usando los repositorios
+            var accountsTask = AccountRepository.GetByUserIdAsync(CurrentUserId);
+            var transactionsTask = TransactionRepository.GetByUserIdAsync(CurrentUserId, limit: 10);
+
+            await Task.WhenAll(accountsTask, transactionsTask);
+
+            accounts = await accountsTask;
+            transactions = await transactionsTask;
+
+            totalBalance = accounts.Sum(a => a.Balance);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
