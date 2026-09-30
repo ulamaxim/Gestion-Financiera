@@ -1,3 +1,4 @@
 <Solution>
+  <Folder Name="/Services/" />
   <Project Path="Gestion Financiera/Gestion Financiera.csproj" />
 </Solution>
