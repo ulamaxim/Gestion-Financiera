@@ -1,7 +1,7 @@
 ﻿namespace Gestion_Financiera.Models.DTOs
 {
     // Para Presupuestos Programables
-    public class PresupuestoProgresoDTO
+    public class BudgetProgressDTO
     {
         public int PresupuestoId { get; set; }
         public string Categoria { get; set; } = string.Empty;
