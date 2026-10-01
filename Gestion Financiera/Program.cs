@@ -5,36 +5,42 @@ using Gestion_Financiera.Repositories.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Añadir servicios al contenedor.
+// =============================================================================
+// 1. SERVICIOS DE INTERFAZ DE USUARIO (Blazor)
+// =============================================================================
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Registrar los repositorios en el contenedor de dependencias
+// =============================================================================
+// 2. CONFIGURACIÓN DE ACCESO A DATOS (Dapper & SQL Server)
+// =============================================================================
+// Fábrica de conexiones (Transient: se genera una nueva instancia por petición)
+builder.Services.AddTransient<IDbConnectionFactory, DbConnectionFactory>();
+
+// =============================================================================
+// 3. INYECCIÓN DE DEPENDENCIAS (Repositorios)
+// =============================================================================
 builder.Services.AddScoped<IAccountRepository, AccountRepository>();
+builder.Services.AddScoped<IBudgetRepository, BudgetRepository>();
+builder.Services.AddScoped<IFinancialMetricsRepository, FinancialMetricsRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
-// ---------------------------------------------------------------------------
-// CONFIGURACIÓN DE DAPPER Y SQL SERVER
-// ---------------------------------------------------------------------------
-// Registramos la fábrica de conexiones como Transient (se crea una nueva por cada petición)
-builder.Services.AddTransient<IDbConnectionFactory, DbConnectionFactory>();
-// ---------------------------------------------------------------------------
-
+// =============================================================================
+// 4. CONSTRUCCIÓN Y PIPELINE DE PETICIONES HTTP
+// =============================================================================
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
-
 app.UseAntiforgery();
-
 app.MapStaticAssets();
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
